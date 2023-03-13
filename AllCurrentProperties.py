@@ -2,11 +2,18 @@ from bs4 import BeautifulSoup
 import requests
 import pandas as pd 
 from math import ceil
+import os
+import re
 
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
+try:
+    os.remove('All Property Listings.csv')
+except FileNotFoundError:
+    pass
 
-state = input("Enter Name of State shortened\n For example, New York would be NY: ")
+
+state = input("Enter Name of State Abbreviation\nFor example, New York would be NY: ")
 state = state.capitalize()
 city = input("Enter full name of city: ")
 
@@ -26,6 +33,14 @@ total_homes = int(total_homes.replace(',', ''))
 total_homes = ceil(total_homes/40) #Divide by 40, since that is the amount per page.
 
 
+address = []
+beds = []
+baths = []
+prices = []
+squarefoots = []
+
+
+
 for i in range(1, 10, 1): #10 is here so I can run the program without waiting a century. Feel free to change it to the value of total_homes or a random integer.
     try:
         if i == 1:
@@ -41,11 +56,6 @@ for i in range(1, 10, 1): #10 is here so I can run the program without waiting a
 
         result_update = soup.find_all('li', {'class' : 'Grid__CellBox-sc-144isrp-0 SearchResultsList__WideCell-sc-14hv67h-2 gBXIcq bmFlVd'})
 
-        address = []
-        beds = []
-        baths = []
-        prices = []
-
         for result in result_update:
             bed = result.find('div', {'data-testid':'property-beds'})
             bath = result.find('div', {'data-testid':'property-baths'})
@@ -53,41 +63,41 @@ for i in range(1, 10, 1): #10 is here so I can run the program without waiting a
             price = result.find('div', {'data-testid': 'property-price'})
             squarefoot =  result.find('div', {'data-testid': 'property-floorSpace'})
 
-            if bed != None and bath != None:
-                bed = bed.text.strip()
-                bath = bath.text.strip()
-                baths.append(bath)
-                beds.append(bed)
-            elif bed != None and bath == None:
-                bed = bed.text.strip()
-                baths.append(0)
-                beds.append(bed)
-            elif bed == None and bath != None:
-                bath = bath.text.strip()
-                beds.append(0)
-                baths.append(bath)
-            if addy != None:
+            if addy == None:
+                continue
+            else:
+                if bath == None:
+                    baths.append("Undisclosed")
+                if bed == None:
+                    beds.append("Undisclosed")
                 addy = addy.text.strip()
                 address.append(addy)
-            if price != None:
-                price = price.text.strip()
-                prices.append(price)
-                print(price)
-            
+                if bed != None:
+                    bed = bed.text.strip()
+                    beds.append(bed)
+                if bath != None:
+                    bath = bath.text.strip()
+                    baths.append(bath)
+                if price != None:
+                    price = price.text.strip()
+                    prices.append(price)
+                else:
+                    prices.append('undisclosed')
+                if squarefoot != None:
+                    squarefoot = squarefoot.text.strip()
+                    squarefoots.append(squarefoot)
+                else:
+                    squarefoots.append('Undisclosed')  
+    except:
+        print ('error has occurred')
+        continue
+    # print (len(squarefoots), len(address), len(beds), len(baths), len(prices))
 
-        
-
-
+for i in range (len(address)):
+    try:
+        real_estate=real_estate.append({'Address':address[i], 'Beds':beds[i], 'Baths':baths[i], 'Price':prices[i], 'Square Foot':squarefoots[i]}, ignore_index=True)
     except:
         continue
-        # print (i)
-
-    # for i in range(len(address)):
-
-    for i in range (len(address)):
-        try:
-            real_estate=real_estate.append({'Address':address[i], 'Beds':beds[i], 'Baths':baths[i], 'Price':prices[i]}, ignore_index=True)
-        except:
-            continue
-
-real_estate.to_csv('real restate.csv')
+        
+    
+real_estate.to_csv('All Property Listings.csv')
