@@ -19,10 +19,10 @@ city = input("Enter full name of city: ")
 
 WEBSITE = f'https://www.trulia.com/{state}/{city}/'
 
-headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36 Edg/96.0.1054.62'}
+HEADERS = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36 Edg/96.0.1054.62'}
 session = requests.Session()
 
-response = requests.get(WEBSITE, headers = headers)
+response = requests.get(WEBSITE, headers = HEADERS)
 
 if response.status_code != 200:
     print('Incorrect Parameters. Check the state abbreviation or city.')
@@ -41,25 +41,15 @@ total_homes = int(total_homes.replace(',', ''))
 total_homes = ceil(total_homes/40) #Divide by 40, since that is the amount per page.
 
 
-address = []
-beds = []
-baths = []
-prices = []
-squarefoots = []
-total_Prices = 0
-total_SqFt = 0
+address, beds, baths, prices, squarefoots = [], [], [], [], []
+total_Prices, total_SqFt = 0, 0
 
 
-for i in range(1, 20, 1): #10 is here so I can run the program without waiting a century. Feel free to change it to the value of total_homes or a random integer. Or just total_homes + 1 for the entire database
+for i in range(1, 20, 1): #10 is here so I can run the program without waiting a century. Feel free to change it to the value of total_homes +1 or a random integer. Or just total_homes + 1 for the entire database
     try:
-        if i == 1:
-            website = WEBSITE
-        else:
-            website = WEBSITE + str(i) +'_p/'
-
-        headers = ({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36 Edg/96.0.1054.62'})
-
-        response = requests.get(website, headers=headers)
+        website = WEBSITE if i == 1 else f'{WEBSITE}{i}_p/'
+    
+        response = requests.get(website, headers = HEADERS)
 
         soup = BeautifulSoup(response.content, 'html.parser')
 
@@ -68,44 +58,35 @@ for i in range(1, 20, 1): #10 is here so I can run the program without waiting a
         for result in result_update:
             bed = result.find('div', {'data-testid':'property-beds'})
             bath = result.find('div', {'data-testid':'property-baths'})
-            addy = result.find('div', {'data-testid':'property-address'})
+            address = result.find('div', {'data-testid':'property-address'})
             price = result.find('div', {'data-testid': 'property-price'})
             squarefoot =  result.find('div', {'data-testid': 'property-floorSpace'})
 
-            if addy is None:
+            if address is None:
                 continue
             else:
-                if bath is None:
-                    baths.append("Undisclosed")
-                if bed is None:
-                    beds.append("Undisclosed")
-                addy = addy.text.strip()
-                address.append(addy)
-                if bed is not None:
-                    bed = bed.text.strip()
-                    beds.append(bed)
-                if bath is not None:
-                    bath = bath.text.strip()
-                    baths.append(bath)
+                baths.append("Undisclosed") if bath is None else None
+                beds.append("Undisclosed") if bed is None else None
+                address = address.text.strip()
+                address.append(address)
+                beds.append(bed.text.strip()) if bed is not None else None
+                baths.append(bath.text.strip()) if bath is not None else None
                 if price is not None:
                     if price.text.strip() == 'undisclosed' or price.text.strip() == '':
                         prices.append('undisclosed')
                     else:
-                        price = price.text.strip()
-                        price = price.replace('+','')
-                        price = price.replace('$','')
-                        price = price.replace(',','')
-                        prices.append(price)
-                        total_Prices += int(price)
+                        prices.append(price.text.strip().replace('+','').replace('$','').replace(',',''))
+                        total_Prices += int(price.text.strip().replace('+','').replace('$','').replace(',',''))
                 else:
                     prices.append('undisclosed')
                 if squarefoot is not None and squarefoot.text.strip() != '':
-                    squarefoot = squarefoot.text.strip()
-                    sqft_match = re.search(r'(\d{1,3}(,\d{3})*)(\.\d+)?\s+sqft(\s*\(on [0-9\.]+ acres\))?', squarefoot)
+                    sqft_match = re.search(r'(\d{1,3}(,\d{3})*)(\.\d+)?\s+sqft(\s*\(on [0-9\.]+ acres\))?', squarefoot.text.strip())
                     if sqft_match:
                         sqft_value = sqft_match.group(1).replace(",", "")
                         total_SqFt += int(sqft_value)
                         squarefoots.append(sqft_value)
+                    else:
+                        squarefoots.append('Undisclosed')
                 else:
                     squarefoots.append('Undisclosed')
     except:
@@ -118,24 +99,21 @@ price_per_sqft = total_Prices / total_SqFt
 
 print(f"Price Per SquareFoot in {city}, {state.capitalize()} is {price_per_sqft}")
 
-for i in range(len(address)):
+valid_indices = [i for i in range(len(address)) if squarefoots[i] != 'undisclosed' and prices[i] not in ['undisclosed', '']]
+real_estate = []
+for i in valid_indices:
     try:
-        if squarefoots[i] == 'undisclosed' or prices[i] == 'undisclosed' or prices[i] == '':
-            continue
-        else:
-            if float(squarefoots[i]) * price_per_sqft > float(prices[i]):
-                real_estate = real_estate.append({
-                    'Address': address[i],
-                    'Beds': beds[i],
-                    'Baths': baths[i],
-                    'Price': prices[i],
-                    'Square Foot': squarefoots[i],
-                    'Suggested Price': round((float(squarefoots[i]) * price_per_sqft), 2)
-                }, ignore_index=True)
-            else:
-                continue
+        squarefoot_price = float(squarefoots[i]) * price_per_sqft
+        if squarefoot_price > float(prices[i]):
+            property_data = {'Address': address[i],
+                             'Beds': beds[i],
+                             'Baths': baths[i],
+                             'Price': prices[i],
+                             'Square Foot': squarefoots[i],
+                             'Suggested Price': round(squarefoot_price, 2)}
+            real_estate.append(property_data)
     except:
         continue
 
-real_estate.to_csv('Best Value Properties.csv', index=False)
-
+df = pd.DataFrame(real_estate)
+df.to_csv('Best Value Properties.csv', index=False)
