@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 import requests
 import pandas as pd 
+import sklearn
 from math import ceil
 import os
 import re

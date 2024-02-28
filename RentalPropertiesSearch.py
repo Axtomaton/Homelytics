@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 import requests
 import pandas as pd 
 import os
-import re
+import sklearn as sk
 from math import ceil
 import warnings
 
