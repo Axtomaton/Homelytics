@@ -1,12 +1,8 @@
-from fastapi import FastAPI
-import uvicorn
-from selenium import webdriver
-import requests
-from fastapi.middleware.cors import CORSMiddleware
-import pandas as pd
 import re
-import bs4 as beautifulsoup
 from math import ceil
+
+import bs4 as beautifulsoup
+import pandas as pd
 import requests
 
 STATE = "NY"
@@ -18,30 +14,7 @@ HEADERS = {
 URL = "https://www.trulia.com"
 
 
-
-
-app = FastAPI()
-# Set up CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
-    allow_headers=["*"],
-)
-
-# Define the root route
-@app.get("/")
-async def root():
-    return {"message": "jie small pp"}
-
-@app.get("/properties") 
-async def properties():
-    return {"message": "jie small pp"}
-
-
-@app.get("/properties/{state}/{city}")
-async def get_properties(state: str, city: str):
+def main():
     realestate = pd.DataFrame(
         columns=["Address", "Beds", "Baths", "Price", "Square Foot", "href"]
     )
@@ -131,13 +104,13 @@ async def get_properties(state: str, city: str):
     realestate["href"] = href
     realestate["img"] = img
     return realestate
-    
+    # realestate.to_csv("realestate.csv", index=False)
+    # print(realestate)
+
+def filterData(dataframe):
+    """
+    """
 
 
-
-
-
-# Ensure the app runs only when this script is executed directly
 if __name__ == "__main__":
-    # uvicorn main:app --reload
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    main()
