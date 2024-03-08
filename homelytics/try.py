@@ -1,9 +1,12 @@
 import re
 from math import ceil
-
-import bs4 as beautifulsoup
 import pandas as pd
 import requests
+from sklearn.metrics import median_absolute_error, mean_squared_error
+from sklearn.preprocessing import StandardScaler
+from sklearn.covariance import EllipticEnvelope
+import bs4 as beautifulsoup
+import matplotlib.pyplot as plt
 
 STATE = "NY"
 CITY = "New_York"
@@ -103,13 +106,67 @@ def main():
     realestate["Square Foot"] = square_foot
     realestate["href"] = href
     realestate["img"] = img
+
+    filterData(realestate)
+    # generateStats(realestate)
     return realestate
     # realestate.to_csv("realestate.csv", index=False)
     # print(realestate)
 
 def filterData(dataframe):
-    """
-    """
+    # Drop rows with missing values or values labeled as "Undisclosed" in 'Price' and 'Square Foot' columns
+    dataframe = dataframe[dataframe['Price'] != 'Undisclosed']
+    dataframe = dataframe[dataframe['Square Foot'] != 'Undisclosed']
+
+    # Convert 'Price' and 'Square Foot' columns to numeric
+    dataframe['Price'] = pd.to_numeric(dataframe['Price'], errors='coerce')
+    dataframe['Square Foot'] = pd.to_numeric(dataframe['Square Foot'], errors='coerce')
+    # Drop rows with NaN values in 'Price' and 'Square Foot' columns after converting to numeric
+    dataframe.dropna(subset=['Price', 'Square Foot'], inplace=True)
+
+    # Calculate value score: price per square foot
+    dataframe['Value Score'] = dataframe['Price'] / dataframe['Square Foot']
+
+    # Convert 'Value Score' column to numpy array
+    value_score_data = dataframe['Value Score'].values.reshape(-1, 1)
+
+    # Standardize the data
+    scaler = StandardScaler()
+    value_score_data_standardized = scaler.fit_transform(value_score_data)
+    # Fit a multivariate Gaussian distribution (Elliptic Envelope)
+    envelope = EllipticEnvelope(contamination=0.05)  # 5% contamination (adjust as needed)
+
+    envelope.fit(value_score_data_standardized)
+    outliers = envelope.predict(value_score_data_standardized)
+    filtered_data = dataframe[outliers == 1]
+    best_properties = filtered_data.sort_values(by='Value Score')
+    # visualize_distribution(best_properties)
+    return best_properties
+
+
+def generateStats(dataframe):
+    dataframe['Price'] = pd.to_numeric(dataframe['Price'], errors='coerce')
+
+    # Get median, std, min, max
+    price_median = dataframe['Price'].median()
+    price_std = dataframe['Price'].std()
+    price_min = dataframe['Price'].min()
+    price_max = dataframe['Price'].max()
+
+    print("Median Price:", price_median)
+    print("Standard Deviation of Price:", price_std)
+    print("Minimum Price:", price_min)
+    print("Maximum Price:", price_max)
+
+def visualize_distribution(dataframe):
+    plt.figure(figsize=(10, 6))
+    plt.hist(dataframe['Value Score'], bins=30, color='skyblue', edgecolor='black')
+    plt.title('Distribution of Value Score')
+    plt.xlabel('Value Score')
+    plt.ylabel('Frequency')
+    plt.grid(True)
+    plt.show()
+
 
 
 if __name__ == "__main__":
