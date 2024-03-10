@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 import uvicorn
-from selenium import webdriver
 import requests
 from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
@@ -8,6 +7,8 @@ import re
 import bs4 as beautifulsoup
 from math import ceil
 import requests
+import json
+import csv
 
 STATE = "NY"
 CITY = "New_York"
@@ -17,11 +18,8 @@ HEADERS = {
 }
 URL = "https://www.trulia.com"
 
-
-
-
 app = FastAPI()
-# Set up CORS
+# Set up CORS 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  
@@ -30,114 +28,86 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/states")
+async def get_states():
+    with open("json_data/states.json") as f:
+        states = json.load(f)
+        return states
+
 # Define the root route
 @app.get("/")
 async def root():
-    return {"message": "jie small pp"}
-
-@app.get("/properties") 
-async def properties():
-    return {"message": "jie small pp"}
-
-
-@app.get("/properties/{state}/{city}")
+    address_keyed_json = {}
+    with open("json_data/nyc_data.csv", newline='', encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            address = row["Address"]  #Address will the key and everything else will the val. 
+            property_details = {
+                "Beds": row["Beds"],
+                "Baths": row["Baths"],
+                "Price": row["Price"],
+                "Square Foot": row["Square Foot"],
+                "href": row["href"],
+                "img": row["img"]
+            }
+            address_keyed_json[address] = property_details
+    return address_keyed_json
+    
+@app.post("/properties/{state}/{city}") #used to collect the data from the website
 async def get_properties(state: str, city: str):
-    realestate = pd.DataFrame(
-        columns=["Address", "Beds", "Baths", "Price", "Square Foot", "href"]
+    website = f"https://www.trulia.com/{state}/{city}/"
+    real_estate = pd.DataFrame(
+        columns=["Address", "Beds", "Baths", "Price", "Square Foot", "href", "img"]
     )
-    address, beds, baths, price, square_foot, href, img = [], [], [], [], [], [], []
-
-    response = requests.get(WEBSITE, headers=HEADERS)
+    response = requests.get(website, headers=HEADERS)
     if response.status_code != 200:
         print("Incorrect Parameters. Check the state abbreviation or city.")
-        return
+        exit()
 
-    soup = beautifulsoup.BeautifulSoup(response.content, "html.parser")
+    soup = beautifulsoup(response.content, "html.parser")
     total_homes_element = soup.find("h2", class_="sc-259f2640-0 bcPATd")
-    total_homes = (
-        int("".join(filter(str.isdigit, total_homes_element.text)))
-        if total_homes_element
-        else 0
-    )
-    total_pages = ceil(total_homes / 40)  # Assuming 40 properties per page
-
-    for page_num in range(
-        1, 20
-    ):  # Change to total_pages if you want to iterate over all pages
+    total_homes = int("".join(filter(str.isdigit, total_homes_element.text))) if total_homes_element else 0
+    total_pages = ceil(total_homes / 40)  # Trulia has 40 properties per page. 
+    for page_num in range(1, 20):  # Modify 20 to total_page if you want all results.
         try:
-            page_url = WEBSITE if page_num == 1 else f"{WEBSITE}{page_num}_p/"
+            page_url = website if page_num == 1 else f"{website}{page_num}_p/" 
             page_response = requests.get(page_url, headers=HEADERS)
-            page_soup = beautifulsoup.BeautifulSoup(
-                page_response.content, "html.parser"
-            )
-            property_list = page_soup.find_all(
-                "li", class_="Grid__CellBox-sc-a8dff4e9-0 sc-84372ace-0 kloaJl kTTMdB"
-            )
-
+            page_soup = beautifulsoup(page_response.content, "html.parser")
+            property_list = page_soup.find_all("li", class_="Grid__CellBox-sc-a8dff4e9-0 sc-84372ace-0 kloaJl kTTMdB")
             for property_elem in property_list:
                 bed = property_elem.find("div", {"data-testid": "property-beds"})
                 bath = property_elem.find("div", {"data-testid": "property-baths"})
-                address_elem = property_elem.find(
-                    "div", {"data-testid": "property-address"}
-                )
-                price_elem = property_elem.find(
-                    "div", {"data-testid": "property-price"}
-                )
-                square_foot_elem = property_elem.find(
-                    "div", {"data-testid": "property-floorSpace"}
-                )
-                href_elem = property_elem.find(
-                    "a", {"class": "Anchor__StyledAnchor-sc-3c3ff02e-1 doURDx"}
-                )
+                address_elem = property_elem.find("div", {"data-testid": "property-address"})
+                price_elem = property_elem.find("div", {"data-testid": "property-price"})
+                square_foot_elem = property_elem.find("div", {"data-testid": "property-floorSpace"})
+                href_elem = property_elem.find("a", {"class": "Anchor__StyledAnchor-sc-3c3ff02e-1 doURDx"})
                 href_elem = URL + href_elem["href"] if href_elem else "Undisclosed"
                 img_elem = property_elem.find("img", {"class": "Image__ImageContainer-sc-7293ddb2-0 iAFCmM"})
                 img_elem = img_elem["src"] if img_elem else "Undisclosed"
-
-
                 if address_elem:
-                    href.append(href_elem) if href_elem else "Undisclosed"
-                    address.append(address_elem.text.strip())
-                    img.append(img_elem)
-                    beds.append(bed.text.strip() if bed else "Undisclosed")
-                    baths.append(bath.text.strip() if bath else "Undisclosed")
-                    price_text = (
-                        price_elem.text.strip() if price_elem else "undisclosed"
-                    )
-                    price.append(
-                        price_text.replace("+", "").replace("$", "").replace(",", "")
-                    )
-
-                    if square_foot_elem:
-                        sqft_match = re.search(
-                            r"(\d{1,3}(,\d{3})*)(\.\d+)?\s+sqft(\s*\(on [0-9\.]+ acres\))?",
-                            square_foot_elem.text.strip(),
-                        )
-                        if sqft_match:
-                            sqft_value = sqft_match.group(1).replace(",", "")
-                            square_foot.append(sqft_value)
-                        else:
-                            square_foot.append("Undisclosed")
-                    else:
-                        square_foot.append("Undisclosed")
+                    real_estate = real_estate.append({
+                        "Address": address_elem.text.strip(),
+                        "Beds": bed.text.strip() if bed else "Undisclosed",
+                        "Baths": bath.text.strip() if bath else "Undisclosed",
+                        "Price": price_elem.text.strip().replace("+", "").replace("$", "").replace(",", "") if price_elem else "undisclosed",
+                        "Square Foot": re.search(r"(\d{1,3}(,\d{3})*)(\.\d+)?\s+sqft(\s*\(on [0-9\.]+ acres\))?", square_foot_elem.text.strip()).group(1).replace(",", "") if square_foot_elem else "Undisclosed",
+                        "href": href_elem,
+                        "img": img_elem
+                    }, ignore_index=True)
         except Exception as e:
             print(f"Error: {e}")
             continue
-
-    realestate["Address"] = address
-    realestate["Beds"] = beds
-    realestate["Baths"] = baths
-    realestate["Price"] = price
-    realestate["Square Foot"] = square_foot
-    realestate["href"] = href
-    realestate["img"] = img
-    return realestate
     
-
-
-
+    real_estate_json = real_estate.set_index("Address").to_dict(orient="index")
+    return json.dumps(real_estate_json)
+    
+@app.get("/filtered_data/{state}/{city}")
+async def filteredData(pandas_df):
+    '''
+    '''
 
 
 # Ensure the app runs only when this script is executed directly
 if __name__ == "__main__":
     # uvicorn main:app --reload
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run(app, host="localhost", port=8080)

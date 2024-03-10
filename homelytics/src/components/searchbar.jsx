@@ -1,68 +1,28 @@
-import React, { Component } from 'react';
+/* eslint-disable react/prop-types */
+import { Component } from 'react';
 import axios from 'axios';
-
-const stateMap = {
-  "AL": "Alabama",
-  "AK": "Alaska",
-  "AZ": "Arizona",
-  "AR": "Arkansas",
-  "CA": "California",
-  "CO": "Colorado",
-  "CT": "Connecticut",
-  "DE": "Delaware",
-  "DC": "District Of Columbia",
-  "FL": "Florida",
-  "GA": "Georgia",
-  "HI": "Hawaii",
-  "ID": "Idaho",
-  "IL": "Illinois",
-  "IN": "Indiana",
-  "IA": "Iowa",
-  "KS": "Kansas",
-  "KY": "Kentucky",
-  "LA": "Louisiana",
-  "ME": "Maine",
-  "MD": "Maryland",
-  "MA": "Massachusetts",
-  "MI": "Michigan",
-  "MN": "Minnesota",
-  "MS": "Mississippi",
-  "MO": "Missouri",
-  "MT": "Montana",
-  "NE": "Nebraska",
-  "NV": "Nevada",
-  "NH": "New Hampshire",
-  "NJ": "New Jersey",
-  "NM": "New Mexico",
-  "NY": "New York",
-  "NC": "North Carolina",
-  "ND": "North Dakota",
-  "OH": "Ohio",
-  "OK": "Oklahoma",
-  "OR": "Oregon",
-  "PA": "Pennsylvania",
-  "RI": "Rhode Island",
-  "SC": "South Carolina",
-  "SD": "South Dakota",
-  "TN": "Tennessee",
-  "TX": "Texas",
-  "UT": "Utah",
-  "VT": "Vermont",
-  "VA": "Virginia",
-  "WA": "Washington",
-  "WV": "West Virginia",
-  "WI": "Wisconsin",
-  "WY": "Wyoming"
-};
 
 export default class SearchBar extends Component {
   constructor(props) {
     super(props);
+    
     this.state = {
       searchValue: '',
       optionsOpen: false, // State to track if options are open
       selectedState: 'NY', // State to store selected state
+      stateMap: {}, 
+      addressMap: {},
     };
+  }
+
+  async componentDidMount() {
+    try {
+      const states_data = await axios.get('http://localhost:8080/states');
+      this.setState({stateMap: states_data.data});
+      
+    } catch (error) {
+      console.error('Error fetching states data:', error);
+    }
   }
 
   handleChange = (e) => {
@@ -73,11 +33,13 @@ export default class SearchBar extends Component {
     this.setState({ selectedState: state, optionsOpen: false });
   };
 
-  handleSubmit = () => {
+  handleSubmit = async () => {
     const { searchValue, selectedState } = this.state;
-    // console.log('Search value:', searchValue);
-    // console.log('Selected state:', selectedState);
-    this.props.callback(selectedState, searchValue);
+    try {
+      this.props.call_back(selectedState, searchValue);
+    } catch (error) {
+      console.error('Error setting value at endpoint:', error);
+    }
   };
 
   toggleOptions = () => {
@@ -85,10 +47,10 @@ export default class SearchBar extends Component {
   };
 
   render() {
-    const { searchValue, optionsOpen, selectedState } = this.state;
+    const { searchValue, optionsOpen, selectedState, stateMap } = this.state;
 
     return (
-      <div style={{ display: 'flex', justifyContent: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', fontSize: '15px', marginBottom: '12px' }}>
         <div className="dropdown">
           <input
             type="search"
@@ -98,6 +60,7 @@ export default class SearchBar extends Component {
             aria-describedby="search-addon"
             value={searchValue}
             onChange={this.handleChange}
+            style={{ width: '200px', height: '40px', fontSize: '20px' }} // Increase width and height
           />
           <button
             className="btn btn-outline-primary dropdown-toggle"
@@ -107,10 +70,11 @@ export default class SearchBar extends Component {
             aria-haspopup="true"
             aria-expanded="false"
             onClick={this.toggleOptions}
+            style={{ fontSize: '20px', height: '40px' }} // Increase font size and height
           >
             {selectedState ? stateMap[selectedState] : 'Select State'}
           </button>
-          {/* Dropdown menu for states */}
+
           {optionsOpen && (
             <div
               className="dropdown-menu show"
@@ -123,7 +87,6 @@ export default class SearchBar extends Component {
                   className="dropdown-item"
                   onClick={() => this.handleSelectState(abbr)}
                 >
-                  {name}
                 </button>
               ))}
             </div>
@@ -133,6 +96,7 @@ export default class SearchBar extends Component {
           type="button"
           className="btn btn-outline-primary ml-2"
           onClick={this.handleSubmit}
+          style={{ fontSize: '20px', height: '40px' }} // Increase font size and height
         >
           Search
         </button>
