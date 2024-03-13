@@ -46,7 +46,7 @@ async def root():
                 "Beds": row["Beds"],
                 "Baths": row["Baths"],
                 "Price": row["Price"],
-                "Square Foot": row["Square Foot"],
+                "SquareFoot": row["SquareFoot"],
                 "href": row["href"],
                 "img": row["img"]
             }
@@ -57,7 +57,7 @@ async def root():
 async def get_properties(state: str, city: str):
     website = f"https://www.trulia.com/{state}/{city}/"
     real_estate = pd.DataFrame(
-        columns=["Address", "Beds", "Baths", "Price", "Square Foot", "href", "img"]
+        columns=["Address", "Beds", "Baths", "Price", "SquareFoot", "href", "img"]
     )
     response = requests.get(website, headers=HEADERS)
     if response.status_code != 200:
@@ -90,7 +90,7 @@ async def get_properties(state: str, city: str):
                         "Beds": bed.text.strip() if bed else "Undisclosed",
                         "Baths": bath.text.strip() if bath else "Undisclosed",
                         "Price": price_elem.text.strip().replace("+", "").replace("$", "").replace(",", "") if price_elem else "undisclosed",
-                        "Square Foot": re.search(r"(\d{1,3}(,\d{3})*)(\.\d+)?\s+sqft(\s*\(on [0-9\.]+ acres\))?", square_foot_elem.text.strip()).group(1).replace(",", "") if square_foot_elem else "Undisclosed",
+                        "SquareFoot": re.search(r"(\d{1,3}(,\d{3})*)(\.\d+)?\s+sqft(\s*\(on [0-9\.]+ acres\))?", square_foot_elem.text.strip()).group(1).replace(",", "") if square_foot_elem else "Undisclosed",
                         "href": href_elem,
                         "img": img_elem
                     }, ignore_index=True)

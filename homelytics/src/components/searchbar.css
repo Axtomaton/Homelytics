@@ -1,0 +1,28 @@
+.dropdown-toggle {
+    font-size: 20px;
+    height: 40px;
+}
+
+.dropdown-menu {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 40px;
+    background-color: #fff;
+    overflow-y: auto;
+    max-height: 200px;
+}
+
+.dropdown-item {
+    color: #000;
+}
+
+.form-control {
+    width: 200px;
+    height: 40px;
+    font-size: 20px;
+}
+.btn-outline-primary {
+    font-size: 20px;
+    height: 40px;
+}

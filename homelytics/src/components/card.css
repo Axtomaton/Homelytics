@@ -1,0 +1,45 @@
+.property-image {
+    width: 281px;
+    height: 281px;
+    object-fit: cover;
+    border-radius: 10px 10px 0 0;
+}
+
+.card-body {
+    padding: 10px;
+    color: white;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-title {
+    font-size: 22px;
+    height: 40%;
+    flex: none;
+    color : white;
+}
+
+.card-text-container {
+    display: flex;}
+
+.card-text-container img {
+    width: 20px;
+    height: 20px;
+    margin-right: 5px;
+}
+
+.card-text {
+    color: white;
+}
+
+.card {
+    width: 281px;
+    height: 500px;
+    margin-bottom: 20px;
+    background-color: #28282B;
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
