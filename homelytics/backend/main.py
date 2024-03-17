@@ -69,7 +69,7 @@ async def get_properties(state: str, city: str):
     total_homes = int("".join(filter(str.isdigit, total_homes_element.text))) if total_homes_element else 0
     total_pages = ceil(total_homes / 40)
 
-    for page_num in range(1, 5):
+    for page_num in range(1, 20):
         try:
             page_url = website if page_num == 1 else f"{website}{page_num}_p/"
             page_response = requests.get(page_url, headers=HEADERS)
@@ -108,8 +108,8 @@ async def get_properties(state: str, city: str):
     real_estate = real_estate.reset_index(drop=True)
     real_estate_json = real_estate.to_dict(orient="records")
     filtered_real_estate_json = filtered_real_estate[0].to_dict(orient="records")
-    # basic_stats = generateStats(real_estate)
-    return {"properties": real_estate_json, "filtered_properties": filtered_real_estate_json, "median_value_score": float(filtered_real_estate[1])}
+    basic_stats = generateStats(real_estate)
+    return {"properties": real_estate_json, "filtered_properties": filtered_real_estate_json, "median_value_score": float(filtered_real_estate[1]), "basic_stats": basic_stats}
 
 
 
@@ -141,9 +141,9 @@ def filteredData(dataframe):
 def generateStats(dataframe):
     dataframe['Price'] = pd.to_numeric(dataframe['Price'], errors='coerce')
     price_median = dataframe['Price'].median()
-    price_std = dataframe['Price'].std()
-    price_min = dataframe['Price'].min()
-    price_max = dataframe['Price'].max()
+    price_std = float(dataframe['Price'].std())
+    price_min = float(dataframe['Price'].min())
+    price_max = float(dataframe['Price'].max())
     return {"Median Price": price_median, "Standard Deviation of Price": price_std, "Minimum Price": price_min, "Maximum Price": price_max}
 
 
