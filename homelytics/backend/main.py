@@ -11,6 +11,9 @@ from math import ceil
 import requests
 import json
 import csv
+import matplotlib.pyplot as plt
+import io
+import base64
 
 STATE = "NY"
 CITY = "New_York"
@@ -69,7 +72,7 @@ async def get_properties(state: str, city: str):
     total_homes = int("".join(filter(str.isdigit, total_homes_element.text))) if total_homes_element else 0
     total_pages = ceil(total_homes / 40)
 
-    for page_num in range(1, 20):
+    for page_num in range(1, 20): #feel free to modify to use `total_pages` but it will take longer
         try:
             page_url = website if page_num == 1 else f"{website}{page_num}_p/"
             page_response = requests.get(page_url, headers=HEADERS)
@@ -117,13 +120,13 @@ def filteredData(dataframe):
     # Drop rows with 'Undisclosed' values in 'Price' and 'SquareFoot' columns
     dataframe = dataframe[dataframe['Price'] != 'Undisclosed']
     dataframe = dataframe[dataframe['SquareFoot'] != 'Undisclosed']
+
     dataframe['Price'] = pd.to_numeric(dataframe['Price'], errors='coerce')
     dataframe['SquareFoot'] = pd.to_numeric(dataframe['SquareFoot'], errors='coerce')
     dataframe.dropna(subset=['Price', 'SquareFoot'], inplace=True)
 
     # Calculate value score: price per square foot
     dataframe['Value Score'] = dataframe['Price'] / dataframe['SquareFoot']
-
     # Convert 'Value Score' column to numpy array
     value_score_data = dataframe['Value Score'].values.reshape(-1, 1)
     scaler = StandardScaler()
@@ -146,6 +149,22 @@ def generateStats(dataframe):
     price_max = float(dataframe['Price'].max())
     return {"Median Price": price_median, "Standard Deviation of Price": price_std, "Minimum Price": price_min, "Maximum Price": price_max}
 
+def generateCharts(dataframe):
+    plt.figure(figsize=(10, 6))
+    plt.hist(dataframe['Value Score'], bins=30, color='skyblue', edgecolor='black')
+    plt.title('Distribution of Value Score')
+    plt.xlabel('Value Score')
+    plt.ylabel('Frequency')
+    plt.grid(True)
+
+    # save the plot to a file-like object
+    buffer = io.BytesIO()
+    plt.savefig(buffer, format='png')
+    buffer.seek(0)
+    # convett to base64 encoded string
+    chart_data = base64.b64encode(buffer.getvalue()).decode()
+    plt.close()
+    return chart_data
 
 # Ensure the app runs only when this script is executed directly
 if __name__ == "__main__":
