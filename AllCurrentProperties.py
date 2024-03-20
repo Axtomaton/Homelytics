@@ -14,11 +14,11 @@ except FileNotFoundError:
     pass
 
 
-state = input("Enter Name of State Abbreviation\nFor example, New York would be NY: ")
-state = state.capitalize()
-city = input("Enter full name of city: ")
+# state = input("Enter Name of State Abbreviation\nFor example, New York would be NY: ")
+# state = state.capitalize()
+# city = input("Enter full name of city: ")
 
-WEBSITE = f'https://www.trulia.com/{state}/{city}/'
+WEBSITE = f'https://www.trulia.com/NY/New_York/'
 
 HEADERS = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36 Edg/96.0.1054.62'}
 
@@ -32,14 +32,14 @@ real_estate = pd.DataFrame(columns = ['Address', 'Beds', 'Baths', 'Price', 'Squa
 
 soup = BeautifulSoup(response.content, 'html.parser')
 
-total_homes = soup.find('h2', {'class':'SearchResultsHeadings__ResultCountText-sc-1npyos5-1 gRoetB'})
+total_homes = soup.find('h2', {'class':'sc-259f2640-0 bcPATd'})
 
 total_homes = total_homes.text.strip(' homes')
 
 
 total_homes = int(total_homes.replace(',', ''))
 total_homes = ceil(total_homes/40) #Divide by 40, since that is the amount per page.
-
+print(total_homes)
 
 addresses, beds, baths, prices, squarefoots = [], [], [], [], []
 
@@ -47,7 +47,7 @@ addresses, beds, baths, prices, squarefoots = [], [], [], [], []
 
 for i in range(1, 20, 1): #10 is here so I can run the program without waiting a century. Feel free to change it to the value of total_homes or a random integer. Or just total_homes + 1 for the entire database
     try:
-        website = WEBSITE if i == 1 else WEBSITE + str(i) +'_p/'
+        website = WEBSITE if i == 1 else WEBSITE + str(i) +'_p/' 
 
         response = requests.get(website, headers = HEADERS)
 
