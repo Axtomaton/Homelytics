@@ -3,7 +3,7 @@ import axios from 'axios';
 import SearchBar from './components/searchbar';
 import Card from './components/card';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import './App.css'; // Import your CSS file here
+import './App.css'; 
 
 function App() {
   const [data, setData] = useState({});
@@ -52,9 +52,9 @@ function App() {
   }
 
   return (
-    <div style={{ backgroundColor: '#1b1b1b'}}>
+    <div>
       <SearchBar call_back={call_back} />
-      <br />
+      <br/>
       {loading ? ( // Display loading state
         <div>Loading...</div>
       ) : (
@@ -63,7 +63,7 @@ function App() {
           <div
             key={index}
             className="card-container"
-            style={{ padding: '20px', marginTop: index > 0 ? '-25px' : '0', backgroundColor: 'brown' }}
+            style={{ padding: '20px', marginTop: index > 0 ? '-25px' : '0', backgroundColor: '#242124' }}
           >
             {keyChunk.map((key, idx) => (
               <Card key={idx} propertyData={data[key]} address={address[index * 5 + idx]} />

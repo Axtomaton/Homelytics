@@ -37,14 +37,18 @@ export default class Card extends Component {
 <div className="card-text-container">
   <img src="https://www.trulia.com/images/icons/txl3/BedIcon.svg" alt="Bed Icon" />
   <h8 className="card-text">{propertyData.Beds}</h8>
-</div>
-<div className="card-text-container">
+  &nbsp;
   <img src="https://www.trulia.com/images/icons/txl3/BathIcon.svg" alt="Bath Icon" />
-  <h8 className="card-text">{propertyData.Baths}</h8>
+  <h8 className="card-text">{propertyData.Baths}</h8> 
 </div>
 <h8 className="card-text">Price: ${propertyData.Price}</h8>
-<h8 className="card-text">{propertyData.SquareFoot}</h8>
-<div>
+<h8 className="card-text">
+  {propertyData.SquareFoot !== "Undisclosed" && (
+    <>
+      Square Foot: {propertyData.SquareFoot}
+    </>
+  )}
+</h8><div>
   <a>
     {propertyData.value && (
       <span className="card-text">

@@ -1,14 +1,15 @@
 :root {
-    --background-color: rgb(185, 172, 147);
+    --background-color: rgb(20, 20, 20);
     --text-color: white;
  }
  
  body {
-    background-color: var(--background-color);
+    background-color: #000000;
     color: var(--text-color);
  }
 
 .card-container {
    display: flex;
    justify-content: space-between; /* Adjust as needed */
+   background-color: #000000;
  }
