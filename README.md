@@ -13,12 +13,12 @@ scikit-learn==0.24.2
 2. To run the FastAPI backend:
     
     a. Navigate to the 'backend' directory:
-     cd backend
+     cd homelytics/backend
      b. Run the main.py file using Python:
        python main.py
 
  3. To set up the frontend:
-    a. Navigate to the home directory of your project:
+    a. Navigate back to the home directory of your project:
        cd ..
     b. Install Node.js dependencies:
        npm install
