@@ -147,7 +147,7 @@ def filterData(dataframe):
 def generateStats(dataframe):
     dataframe['Price'] = pd.to_numeric(dataframe['Price'], errors='coerce')
 
-    # Get median, std, min, max
+    # get median, std, min, max
     price_median = dataframe['Price'].median()
     price_std = dataframe['Price'].std()
     price_min = dataframe['Price'].min()

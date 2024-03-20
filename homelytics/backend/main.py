@@ -15,9 +15,7 @@ import matplotlib.pyplot as plt
 import io
 import base64
 
-STATE = "NY"
-CITY = "New_York"
-WEBSITE = f"https://www.trulia.com/{STATE}/{CITY}/"
+
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36 Edg/96.0.1054.62"
 }
@@ -109,12 +107,12 @@ async def get_properties(state: str, city: str):
 
     # Reset index to ensure it's unique
     real_estate = real_estate.reset_index(drop=True)
-    real_estate_json = real_estate.to_dict(orient="records")
-    filtered_real_estate_json = filtered_real_estate[0].to_dict(orient="records")
-    basic_stats = generateStats(real_estate)
-    return {"properties": real_estate_json, "filtered_properties": filtered_real_estate_json, "median_value_score": float(filtered_real_estate[1]), "basic_stats": basic_stats}
+    real_estate_json = real_estate.to_dict(orient="records") 
+    filtered_real_estate_json = filtered_real_estate[0].to_dict(orient="records") ##filtered real estate data to remove outliers and nonvalues
+    basic_stats = generateStats(real_estate) #basic stats from the original dataframe
+    chart = rts = generateCharts(real_estate) #chart of the distribution of the value score
 
-
+    return {"properties": real_estate_json, "filtered_properties": filtered_real_estate_json, "median_value_score": float(filtered_real_estate[1]), "basic_stats": basic_stats, "chart" : chart}
 
 def filteredData(dataframe):
     # Drop rows with 'Undisclosed' values in 'Price' and 'SquareFoot' columns
