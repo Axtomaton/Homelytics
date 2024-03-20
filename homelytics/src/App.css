@@ -8,8 +8,14 @@
     color: var(--text-color);
  }
 
-.card-container {
+ .card-container {
    display: flex;
-   justify-content: space-between; /* Adjust as needed */
+   flex-wrap: wrap;
+   justify-content: center; /* Center the cards horizontally */
    background-color: #000000;
+   padding: 0 15px; /* Add padding to the sides */
+ }
+ 
+ .card {
+   margin: 10px; /* Add margin around each card */
  }

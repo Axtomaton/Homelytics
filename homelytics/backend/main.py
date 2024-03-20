@@ -40,27 +40,28 @@ async def get_states():
 # Define the root route
 @app.get("/")
 async def root():
-    address_keyed_json = {}
+    properties_list = []
     with open("json_data/nyc_data.csv", newline='', encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
-            address = row["Address"]  #Address will the key and everything else will the val. 
             property_details = {
+                "Address": row["Address"],
                 "Beds": row["Beds"],
                 "Baths": row["Baths"],
-                "Price": row["Price"],
+                "Price": '{:,.0f}'.format(float(row["Price"])),                
                 "SquareFoot": row["SquareFoot"],
                 "href": row["href"],
                 "img": row["img"]
             }
-            address_keyed_json[address] = property_details
-    return address_keyed_json
+            properties_list.append(property_details)
+    return properties_list
     
 @app.get("/properties/{state}/{city}")
 async def get_properties(state: str, city: str):
     website = f"https://www.trulia.com/{state}/{city}/"
     real_estate_data = []  # List to store property data
-
+    city = city.replace(" ", "_")
+    print(city)
     response = requests.get(website, headers=HEADERS)
     if response.status_code != 200:
         raise HTTPException(status_code=404, detail="Incorrect Parameters. Check the state abbreviation or city.")
@@ -70,7 +71,7 @@ async def get_properties(state: str, city: str):
     total_homes = int("".join(filter(str.isdigit, total_homes_element.text))) if total_homes_element else 0
     total_pages = ceil(total_homes / 40)
 
-    for page_num in range(1, 20): #feel free to modify to use `total_pages` but it will take longer
+    for page_num in range(1, 5): #feel free to modify to use `total_pages` but it will take longer
         try:
             page_url = website if page_num == 1 else f"{website}{page_num}_p/"
             page_response = requests.get(page_url, headers=HEADERS)
@@ -110,7 +111,7 @@ async def get_properties(state: str, city: str):
     real_estate_json = real_estate.to_dict(orient="records") 
     filtered_real_estate_json = filtered_real_estate[0].to_dict(orient="records") ##filtered real estate data to remove outliers and nonvalues
     basic_stats = generateStats(real_estate) #basic stats from the original dataframe
-    chart = rts = generateCharts(real_estate) #chart of the distribution of the value score
+    chart = generateCharts(filtered_real_estate_json) #chart of the distribution of the value score
 
     return {"properties": real_estate_json, "filtered_properties": filtered_real_estate_json, "median_value_score": float(filtered_real_estate[1]), "basic_stats": basic_stats, "chart" : chart}
 
@@ -137,8 +138,6 @@ def filteredData(dataframe):
     median_value_score = best_properties['Value Score'].median()  
     return best_properties, median_value_score  # Return both filtered DataFrame and median value score
 
-
-
 def generateStats(dataframe):
     dataframe['Price'] = pd.to_numeric(dataframe['Price'], errors='coerce')
     price_median = dataframe['Price'].median()
@@ -147,7 +146,16 @@ def generateStats(dataframe):
     price_max = float(dataframe['Price'].max())
     return {"Median Price": price_median, "Standard Deviation of Price": price_std, "Minimum Price": price_min, "Maximum Price": price_max}
 
+
 def generateCharts(dataframe):
+    if not isinstance(dataframe, pd.DataFrame):
+        print("Error: Input is not a DataFrame")
+        return None
+
+    if 'Value Score' not in dataframe.columns:
+        print("Error: 'Value Score' column not found in DataFrame")
+        return None
+
     plt.figure(figsize=(10, 6))
     plt.hist(dataframe['Value Score'], bins=30, color='skyblue', edgecolor='black')
     plt.title('Distribution of Value Score')
@@ -159,10 +167,11 @@ def generateCharts(dataframe):
     buffer = io.BytesIO()
     plt.savefig(buffer, format='png')
     buffer.seek(0)
-    # convett to base64 encoded string
+    # convert to base64 encoded string
     chart_data = base64.b64encode(buffer.getvalue()).decode()
     plt.close()
     return chart_data
+
 
 # Ensure the app runs only when this script is executed directly
 if __name__ == "__main__":

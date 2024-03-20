@@ -5,14 +5,12 @@ export default class Card extends Component {
     super(props);
     this.state = {
       propertyData: {},
-      address: ""
     };
   }
 
   async componentDidMount() {
     this.setState({ propertyData: this.props.propertyData });
     // console.log(this.props.propertyData);
-    this.setState({ address: this.props.address })
     // console.log(this.props.address); // Accessing the uniqueKey prop
   }
 
@@ -33,22 +31,30 @@ export default class Card extends Component {
         </a>
 
         <div className="card-body">
-        <h3 className="card-title card-text" style={{color: "white"}}>{address}</h3>
-<div className="card-text-container">
-  <img src="https://www.trulia.com/images/icons/txl3/BedIcon.svg" alt="Bed Icon" />
-  <h8 className="card-text">{propertyData.Beds}</h8>
-  &nbsp;
-  <img src="https://www.trulia.com/images/icons/txl3/BathIcon.svg" alt="Bath Icon" />
-  <h8 className="card-text">{propertyData.Baths}</h8> 
+        <h3 className="card-title card-text" style={{color: "white"}}>{propertyData.Address}</h3>
+
+
+
+        <div className="card-text-container">
+  <div className="bed-container">
+    <img src="https://www.trulia.com/images/icons/txl3/BedIcon.svg" alt="Bed Icon" />
+    <h6 className="card-text">{propertyData.Beds}</h6>
+  </div>
+  <div className="bath-container">
+    <img src="https://www.trulia.com/images/icons/txl3/BathIcon.svg" alt="Bath Icon" />
+    <h6 className="card-text">{propertyData.Baths}</h6>
+  </div>
 </div>
-<h8 className="card-text">Price: ${propertyData.Price}</h8>
-<h8 className="card-text">
+
+
+<h6 className="card-text">Price: ${propertyData.Price}</h6>
+<h6 className="card-text">
   {propertyData.SquareFoot !== "Undisclosed" && (
     <>
       Square Foot: {propertyData.SquareFoot}
     </>
   )}
-</h8><div>
+</h6><div>
   <a>
     {propertyData.value && (
       <span className="card-text">

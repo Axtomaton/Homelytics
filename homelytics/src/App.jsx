@@ -7,8 +7,10 @@ import './App.css';
 
 function App() {
   const [data, setData] = useState({});
-  const [address, setAddress] = useState([]);
   const [loading, setLoading] = useState(false); // Add loading state
+  // const [graph, setgraph] = useState("");
+  const [view, setView] = useState("Normal"); //options are Normal, Filtered, and Graph
+
 
   useEffect(() => {
     fetchData();
@@ -19,7 +21,6 @@ function App() {
     try {
       const response = await axios.get('http://localhost:8080/');
       setData(Object.values(response.data));
-      setAddress(Object.keys(response.data));
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -27,14 +28,13 @@ function App() {
     }
   }
 
-  async function call_back(state, searchValue) {
+  async function call_back(state, city) {
+    // console.log(state, city)
     setLoading(true);
     try {
-      const response = await axios.get(`http://localhost:8080/properties/${state}`, {
-        params: {
-          search: searchValue,
-        },
-      });
+      const response = await axios.get(`http://localhost:8080/properties/${state}/${city}`, {});
+      console.log(response.data)
+      // const 
       setData(response.data);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -51,9 +51,13 @@ function App() {
     return chunks;
   }
 
+function new_selection(newView){
+  this.setState({view: newView})}
+  
+
   return (
     <div>
-      <SearchBar call_back={call_back} />
+      <SearchBar call_back={call_back} new_selection={new_selection} />
       <br/>
       {loading ? ( // Display loading state
         <div>Loading...</div>
@@ -63,10 +67,10 @@ function App() {
           <div
             key={index}
             className="card-container"
-            style={{ padding: '20px', marginTop: index > 0 ? '-25px' : '0', backgroundColor: '#242124' }}
+            style={{ padding: '20px', backgroundColor: '#242124' }}
           >
             {keyChunk.map((key, idx) => (
-              <Card key={idx} propertyData={data[key]} address={address[index * 5 + idx]} />
+              <Card key={idx} propertyData={data[key]} />
             ))}
           </div>
         ))
