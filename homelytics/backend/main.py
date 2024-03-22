@@ -104,16 +104,18 @@ async def get_properties(state: str, city: str):
             continue
     
     real_estate = pd.DataFrame(real_estate_data)
-    filtered_real_estate = filteredData(real_estate)
+    filtered_real_estate, median_value_score = filteredData(real_estate)
 
     # Reset index to ensure it's unique
     real_estate = real_estate.reset_index(drop=True)
     real_estate_json = real_estate.to_dict(orient="records") 
-    filtered_real_estate_json = filtered_real_estate[0].to_dict(orient="records") ##filtered real estate data to remove outliers and nonvalues
-    basic_stats = generateStats(real_estate) #basic stats from the original dataframe
-    chart = generateCharts(filtered_real_estate_json) #chart of the distribution of the value score
 
-    return {"properties": real_estate_json, "filtered_properties": filtered_real_estate_json, "median_value_score": float(filtered_real_estate[1]), "basic_stats": basic_stats, "chart" : chart}
+    basic_stats = generateStats(filtered_real_estate) #basic stats from the original dataframe
+    chart = generateCharts(filtered_real_estate) #chart of the distribution of the value score
+
+    filtered_real_estate_json = filtered_real_estate.to_dict(orient="records") ##filtered real estate data to remove outliers and nonvalues
+
+    return {"properties": real_estate_json, "filtered_properties": filtered_real_estate_json, "median_value_score": float(median_value_score), "basic_stats": basic_stats, "chart" : chart}
 
 def filteredData(dataframe):
     # Drop rows with 'Undisclosed' values in 'Price' and 'SquareFoot' columns
@@ -134,27 +136,24 @@ def filteredData(dataframe):
     envelope.fit(value_score_data_standardized)
     outliers = envelope.predict(value_score_data_standardized)
     filtered_data = dataframe[outliers == 1]
-    best_properties = filtered_data.sort_values(by='Value Score')
-    median_value_score = best_properties['Value Score'].median()  
+
+    best_properties = filtered_data.sort_values(by='Value Score') #dictionary of the properties based on value score
+    median_value_score = best_properties['Value Score'].median()  # Calculate median value score
     return best_properties, median_value_score  # Return both filtered DataFrame and median value score
 
-def generateStats(dataframe):
-    dataframe['Price'] = pd.to_numeric(dataframe['Price'], errors='coerce')
-    price_median = dataframe['Price'].median()
-    price_std = float(dataframe['Price'].std())
-    price_min = float(dataframe['Price'].min())
-    price_max = float(dataframe['Price'].max())
-    return {"Median Price": price_median, "Standard Deviation of Price": price_std, "Minimum Price": price_min, "Maximum Price": price_max}
+def generateStats(dataframe) -> dict:
+    stats = {}
+    stats['Median Price'] = float(dataframe['Price'].median())
+    stats['Standard Deviation of Price'] = float(dataframe['Price'].std())
+    stats['Minimum Price'] = float(dataframe['Price'].min())
+    stats['Maximum Price'] = float(dataframe['Price'].max())
+    return stats
 
 
 def generateCharts(dataframe):
-    if not isinstance(dataframe, pd.DataFrame):
-        print("Error: Input is not a DataFrame")
-        return None
-
     if 'Value Score' not in dataframe.columns:
         print("Error: 'Value Score' column not found in DataFrame")
-        return None
+        exit()
 
     plt.figure(figsize=(10, 6))
     plt.hist(dataframe['Value Score'], bins=30, color='skyblue', edgecolor='black')

@@ -36,7 +36,8 @@ export default class DuplicatedSearchBar extends Component {
   };
 
   handleViewChange = (state) => {
-    this.setState({ SelectedViewState: state, duplicateOptionsOpen: false });
+    console.log(state);
+    this.props.new_selection(state);
   };
 
   handleSubmit = async () => {
@@ -48,15 +49,12 @@ export default class DuplicatedSearchBar extends Component {
     }
   };
 
-  handleDuplicateSubmit = async () => {
-    // Add your functionality for the duplicated search button here
-  };
-
   toggleOptions = () => {
     this.setState((prevState) => ({ optionsOpen: !prevState.optionsOpen }));
   };
 
   toggleDuplicateOptions = () => {
+    // console.lolg
     this.setState((prevState) => ({ duplicateOptionsOpen: !prevState.duplicateOptionsOpen }));
   };
 
@@ -117,11 +115,11 @@ export default class DuplicatedSearchBar extends Component {
               aria-describedby="search-addon"
               value={searchValue}
               onChange={this.handleChange}
-              onKeyPress={this.handleKeyPress} // Call handleKeyPress function
+              onKeyPress={this.handleKeyPress} 
             />
           </div>
         </div>
-        {/* Original search button */}
+
         <button
           type="button"
           className="btn btn-outline-primary ml-2"
@@ -152,30 +150,29 @@ export default class DuplicatedSearchBar extends Component {
               >
                 <button
                   className="dropdown-item"
-                  onClick={() => this.handleViewChange('Regular')} // Change to appropriate value
+                  onClick={() => this.handleViewChange('Normal')}
                   style={{ color: '#000' }} 
                 >
                   Regular
                 </button>
                 <button
                   className="dropdown-item"
-                  onClick={() => this.handleViewChange('Filtered')} // Change to appropriate value
+                  onClick={() => this.handleViewChange('Filtered')}
                   style={{ color: '#000' }} 
                 >
                   Filtered
                 </button>
                 <button
                   className="dropdown-item"
-                  onClick={() => this.handleViewChange('Graph')} // Change to appropriate value
+                  onClick={() => this.handleViewChange('Graph')}
                   style={{ color: '#000' }} 
                 >
                   Graph
                 </button>
               </div>
             )}
-          </div>
+                    </div>
         </div>
-  
       </div>
     );
   }

@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  node_app:
+    build: .
+    container_name: homelytics-webapp
+    ports:
+      - "5173:5173"  # Expose container port 5173 to host port 5173
+
+  python_app:
+    build:
+      context: .
+      dockerfile: Dockerfile.py
+    container_name: python-backend
+    ports:
+      - "3030:3030"  # Expose container port 3030 to host port 3030

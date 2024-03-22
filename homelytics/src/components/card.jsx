@@ -15,7 +15,7 @@ export default class Card extends Component {
   }
 
   render() {
-    const { propertyData, address } = this.state;
+    const { propertyData } = this.state;
 
     return (
       <div
@@ -56,9 +56,9 @@ export default class Card extends Component {
   )}
 </h6><div>
   <a>
-    {propertyData.value && (
+    {propertyData["Value Score"] && (
       <span className="card-text">
-        Value: {propertyData.value}
+        Value: {propertyData["Value Score"].toFixed(2)}
       </span>
     )}
   </a>
