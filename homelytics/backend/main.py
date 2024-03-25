@@ -71,7 +71,7 @@ async def get_properties(state: str, city: str):
     total_homes = int("".join(filter(str.isdigit, total_homes_element.text))) if total_homes_element else 0
     total_pages = ceil(total_homes / 40)
 
-    for page_num in range(1, 5): #feel free to modify to use `total_pages` but it will take longer for places with a lot of listings like NYC, SF, LA, etc
+    for page_num in range(1, 2): #feel free to modify to use `total_pages` but it will take longer for places with a lot of listings like NYC, SF, LA, etc
         try:
             page_url = website if page_num == 1 else f"{website}{page_num}_p/"
             page_response = requests.get(page_url, headers=HEADERS)
@@ -105,18 +105,20 @@ async def get_properties(state: str, city: str):
     
     real_estate = pd.DataFrame(real_estate_data)
     filtered_real_estate, median_value_score = filter_data(real_estate)
+    before_clean_up = filtered_real_estate
+    filtered_real_estate = pd.DataFrame(filtered_real_estate)
 
     # Reset index to ensure uniqueness
     real_estate = real_estate.reset_index(drop=True) 
     chart_id = str(uuid.uuid4()) # Generate a unique chart ID
     real_estate["Price"] = real_estate["Price"].apply(lambda x: '{:,.0f}'.format(float(x)))
-
+    filtered_real_estate["Price"] = filtered_real_estate["Price"].apply(lambda x: '{:,.0f}'.format(float(x)))
 
     return {"properties": real_estate.to_dict(orient="records"), 
             "filtered_properties": filtered_real_estate.to_dict(orient="records"), 
             "median_value_score": float(median_value_score), 
-            "basic_stats": generateStats(filtered_real_estate),
-            "chart": generateCharts(filtered_real_estate, chart_id),
+            "basic_stats": generateStats(before_clean_up),
+            "chart": generateCharts(before_clean_up, chart_id),
             "chart_id": chart_id}
 
 @app.get("/charts/{chart_id}")
@@ -153,10 +155,10 @@ def filter_data(dataframe):
 
 def generateStats(dataframe) -> dict:
     stats = {}
-    stats['Median Price'] = float(dataframe['Price'].median())
-    stats['Standard Deviation of Price'] = float(dataframe['Price'].std())
-    stats['Minimum Price'] = float(dataframe['Price'].min())
-    stats['Maximum Price'] = float(dataframe['Price'].max())
+    stats['Median Price'] = '{:,.0f}'.format(float(dataframe['Price'].median()))
+    stats['Standard Deviation of Price'] = '{:,.0f}'.format(float(dataframe['Price'].std()))
+    stats['Minimum Price'] = '{:,.0f}'.format(float(dataframe['Price'].min()))
+    stats['Maximum Price'] = '{:,.0f}'.format(float(dataframe['Price'].max()))
     return stats
 
 
