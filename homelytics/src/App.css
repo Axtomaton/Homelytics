@@ -1,21 +1,31 @@
 :root {
     --background-color: rgb(20, 20, 20);
     --text-color: white;
- }
+}
  
- body {
+body {
     background-color: #000000;
     color: var(--text-color);
- }
+}
 
- .card-container {
-   display: flex;
-   flex-wrap: wrap;
-   justify-content: center; /* Center the cards horizontally */
-   background-color: #000000;
-   padding: 0 15px; /* Add padding to the sides */
- }
- 
- .card {
+.card-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center; /* Center the cards horizontally */
+  background-color: #000000;
+  padding: 0 15px; /* Add padding to the sides */
+}
+
+.card {
    margin: 10px; /* Add margin around each card */
- }
+}
+
+
+.container {
+  display: flex;
+  justify-content: center;
+}
+
+.chart-container {
+  margin-right: 20px; /* Adjust as needed */
+}

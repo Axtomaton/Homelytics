@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import { Component } from 'react';
 import axios from 'axios';
 import "./searchbar.css"
 
@@ -38,6 +38,7 @@ export default class DuplicatedSearchBar extends Component {
   handleViewChange = (state) => {
     console.log(state);
     this.props.new_selection(state);
+    this.setState({ SelectedViewState: state });
   };
 
   handleSubmit = async () => {

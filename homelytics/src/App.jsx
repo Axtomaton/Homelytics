@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
 import SearchBar from './components/searchbar';
 import Card from './components/card';
@@ -18,7 +18,7 @@ function App() {
     setLoading(true);
     try {
       const response = await axios.get('http://localhost:8080/');
-      console.log('Response:', response); // Log the response
+      console.log('Response:', response);
       setData(response.data);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -31,10 +31,10 @@ function App() {
     setLoading(true);
     try {
       const response = await axios.get(`http://localhost:8080/properties/${state}/${city}`);
+      // console.log('Response:', response);
       if (response.data.length === 0) {
         alert("No properties found for the given city and state");
-      }
-      else{
+      } else {
         setData(response.data);
       }
     } catch (error) {
@@ -57,13 +57,20 @@ function App() {
     setView(newView);
   }
 
+
   return (
     <div>
       <SearchBar call_back={call_back} new_selection={new_selection} />
       <br />
       {loading ? (
-        <div>Loading...</div>
-      ) : (
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>
+          <div className="spinner-border" style={{ width: '5rem', height: '5rem' }} role="status">
+              <span className="visually-hidden">Loading...</span>
+          </div>
+          <div style={{ marginTop: '1rem' }}>Loading...</div>
+        </div>     
+        
+        ) : (
         <>
           {view === "Normal" && (
             <>
@@ -109,15 +116,31 @@ function App() {
             </>
           )}
           {view === "Graph" && (
-            <div>
-              <h1>Graph View</h1>
-            </div>
-          )}
+          <div className="container">
+              <div className="chart-container">
+                  <img
+                      src={`http://localhost:8080/charts/${data.chart_id}`}
+                      alt="Chart"
+                  />
+              </div>
+              <div className="stats-container">
+                  <div className="card-body">
+                      <h5 className="card-title">Statistics</h5>
+                      <ul className="list-group list-group-flush">
+                          <li className="list-group-item">Median Price: {data.basic_stats['Median Price']}</li>
+                          <li className="list-group-item">Standard Deviation of Price: {data.basic_stats['Standard Deviation of Price'].toFixed(2)}</li>
+                          <li className="list-group-item">Minimum Price: {data.basic_stats['Minimum Price']}</li>
+                          <li className="list-group-item">Maximum Price: {data.basic_stats['Maximum Price']}</li>
+                          <li className="list-group-item">Median Value Score: {data.median_value_score.toFixed(2)}</li>
+                      </ul>
+                  </div>
+              </div>
+          </div>
+      )}
         </>
       )}
     </div>
   );
-  
 }
 
 export default App;

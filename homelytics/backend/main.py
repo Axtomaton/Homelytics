@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 from sklearn.covariance import EllipticEnvelope
 from sklearn.discriminant_analysis import StandardScaler
 import uvicorn
@@ -12,14 +13,13 @@ import requests
 import json
 import csv
 import matplotlib.pyplot as plt
-import io
-import base64
-
-
+import uuid
+import os
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36 Edg/96.0.1054.62"
 }
 URL = "https://www.trulia.com"
+
 
 app = FastAPI()
 # Set up CORS 
@@ -60,8 +60,8 @@ async def root():
 async def get_properties(state: str, city: str):
     website = f"https://www.trulia.com/{state}/{city}/"
     real_estate_data = []  # List to store property data
-    city = city.replace(" ", "_")
-    print(city)
+    city = city.replace(" ", "_")# Replace spaces with underscores b/c thats how Trulia URL is formatted
+    # print(city)
     response = requests.get(website, headers=HEADERS)
     if response.status_code != 200:
         raise HTTPException(status_code=404, detail="Incorrect Parameters. Check the state abbreviation or city.")
@@ -71,7 +71,7 @@ async def get_properties(state: str, city: str):
     total_homes = int("".join(filter(str.isdigit, total_homes_element.text))) if total_homes_element else 0
     total_pages = ceil(total_homes / 40)
 
-    for page_num in range(1, 5): #feel free to modify to use `total_pages` but it will take longer
+    for page_num in range(1, 5): #feel free to modify to use `total_pages` but it will take longer for places with a lot of listings like NYC, SF, LA, etc
         try:
             page_url = website if page_num == 1 else f"{website}{page_num}_p/"
             page_response = requests.get(page_url, headers=HEADERS)
@@ -104,21 +104,31 @@ async def get_properties(state: str, city: str):
             continue
     
     real_estate = pd.DataFrame(real_estate_data)
-    filtered_real_estate, median_value_score = filteredData(real_estate)
+    filtered_real_estate, median_value_score = filter_data(real_estate)
 
-    # Reset index to ensure it's unique
-    real_estate = real_estate.reset_index(drop=True)
-    real_estate_json = real_estate.to_dict(orient="records") 
+    # Reset index to ensure uniqueness
+    real_estate = real_estate.reset_index(drop=True) 
+    chart_id = str(uuid.uuid4()) # Generate a unique chart ID
+    real_estate["Price"] = real_estate["Price"].apply(lambda x: '{:,.0f}'.format(float(x)))
 
-    basic_stats = generateStats(filtered_real_estate) #basic stats from the original dataframe
-    chart = generateCharts(filtered_real_estate) #chart of the distribution of the value score
 
-    filtered_real_estate_json = filtered_real_estate.to_dict(orient="records") ##filtered real estate data to remove outliers and nonvalues
+    return {"properties": real_estate.to_dict(orient="records"), 
+            "filtered_properties": filtered_real_estate.to_dict(orient="records"), 
+            "median_value_score": float(median_value_score), 
+            "basic_stats": generateStats(filtered_real_estate),
+            "chart": generateCharts(filtered_real_estate, chart_id),
+            "chart_id": chart_id}
 
-    return {"properties": real_estate_json, "filtered_properties": filtered_real_estate_json, "median_value_score": float(median_value_score), "basic_stats": basic_stats, "chart" : chart}
+@app.get("/charts/{chart_id}")
+async def get_chart(chart_id: str):
+    chart_path = os.path.join("charts", f"{chart_id}.png")
+    if os.path.exists(chart_path):
+        return FileResponse(chart_path, media_type="image/png")
+    else:
+        raise HTTPException(status_code=404, detail="Chatr was not found!")
 
-def filteredData(dataframe):
-    # Drop rows with 'Undisclosed' values in 'Price' and 'SquareFoot' columns
+def filter_data(dataframe):
+    # Drop rows with 'Undisclosed' values in the Price and SquareFoot cols
     dataframe = dataframe[dataframe['Price'] != 'Undisclosed']
     dataframe = dataframe[dataframe['SquareFoot'] != 'Undisclosed']
 
@@ -150,10 +160,10 @@ def generateStats(dataframe) -> dict:
     return stats
 
 
-def generateCharts(dataframe):
+def generateCharts(dataframe, chart_id):
     if 'Value Score' not in dataframe.columns:
         print("Error: 'Value Score' column not found in DataFrame")
-        exit()
+        return None
 
     plt.figure(figsize=(10, 6))
     plt.hist(dataframe['Value Score'], bins=30, color='skyblue', edgecolor='black')
@@ -162,17 +172,18 @@ def generateCharts(dataframe):
     plt.ylabel('Frequency')
     plt.grid(True)
 
-    # save the plot to a file-like object
-    buffer = io.BytesIO()
-    plt.savefig(buffer, format='png')
-    buffer.seek(0)
-    # convert to base64 encoded string
-    chart_data = base64.b64encode(buffer.getvalue()).decode()
-    plt.close()
-    return chart_data
+    # Create the 'charts' directory if it doesn't exist
+    charts_dir = 'charts'
+    if not os.path.exists(charts_dir):
+        os.makedirs(charts_dir)
+
+    # Save the plot to the 'charts' directory with the provided chart_id
+    chart_path = os.path.join(charts_dir, f"{chart_id}.png")
+    plt.savefig(chart_path, format='png')
+    plt.close()  # Close the plot to release resources
+    return chart_path
 
 
-# Ensure the app runs only when this script is executed directly
 if __name__ == "__main__":
     # uvicorn main:app --reload
     uvicorn.run(app, host="localhost", port=8080)
